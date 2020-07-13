@@ -132,12 +132,15 @@ fn main() {
     loop {
         let (cur_row, cur_col) = window.get_cur_yx();
 
+        // TODO handle resize event. Already laid groundwork with gen_grid's ability to take
+        // another grid as an input param, it should just be -> resize win, get coords, update
+        // matrix.
         match window.getch() {
             // movement
             Some(Input::Character('w')) => {window.mv(cur_row-1, cur_col);},
             Some(Input::Character('a')) => {window.mv(cur_row, cur_col-1);},
             // make sure it doesn't clip toolbar. Laziest way possible.
-            // maybe the main win should be 1 less than window, and toolbar should be its own win?
+            // TODO maybe the main win should be 1 less than window, and toolbar should be its own win?
             Some(Input::Character('s')) => {window.mv(
                 std::cmp::min(cur_row+1, matrix.len() as i32 - 1), cur_col);},
             Some(Input::Character('d')) => {window.mv(cur_row, cur_col+1);},
