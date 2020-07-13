@@ -1,6 +1,6 @@
 [package]
 name = "cursed_life"
-version = "0.1.0"
+version = "0.9.0"
 authors = ["Beinsezii <beinsezii@gmail.com>"]
 edition = "2018"
 
@@ -8,7 +8,6 @@ edition = "2018"
 
 [dependencies]
 pancurses = "0.16"
-ndarray = "0.13"
 
 
 [profile.release]
