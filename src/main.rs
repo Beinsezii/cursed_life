@@ -94,8 +94,11 @@ fn gol_step(grid: &Vec<Vec<bool>>, live: i32, birth: i32) -> Vec<Vec<bool>> {
 
 
 // creates the string for the toolbar.
-fn gen_toolbar<T: std::fmt::Display>(live: T, birth: T) -> String{
-    format!("live:{}  birth:{}", live, birth)
+fn gen_toolbar<I, F>(live: I, birth: I, framerate: F) -> String where
+    I: std::fmt::Display,
+    F: std::fmt::Display,
+{
+    format!("live:{}  birth:{}  max FPS:{:.1}", live, birth, framerate)
 }
 
 
@@ -112,8 +115,10 @@ fn redraw(window: &pancurses::Window, text: &str) {
 fn main() {
     let ch_t = 'O';
     let ch_f = ' ';
-    let mut live = 2;
-    let mut birth = 3;
+    let mut live: i32 = 2;
+    let mut birth: i32 = 3;
+    let framerates = [0.5, 1., 2., 5., 10., 15., 20., 30., 45., 60., 90., 120., 999.];
+    let mut framerate = 5;
     let window = pancurses::initscr();
     pancurses::noecho();
     let (cols, rows) = window.get_max_yx();
@@ -122,7 +127,7 @@ fn main() {
 
     macro_rules! redraw_all {
         () => {
-            redraw(&window, &(grid_to_str(&matrix, ch_t, ch_f)+&gen_toolbar(live, birth)));
+            redraw(&window, &(grid_to_str(&matrix, ch_t, ch_f)+&gen_toolbar(live, birth, framerates[framerate])));
         }
     }
 
@@ -145,17 +150,30 @@ fn main() {
                 std::cmp::min(cur_row+1, matrix.len() as i32 - 1), cur_col);},
             Some(Input::Character('d')) => {window.mv(cur_row, cur_col+1);},
 
-            // change rules
-            Some(Input::Character('-')) => {live -= 1; redraw_all!()},
-            Some(Input::Character('=')) => {live += 1; redraw_all!()},
-            Some(Input::Character('[')) => {birth -= 1; redraw_all!()},
-            Some(Input::Character(']')) => {birth += 1; redraw_all!()},
-
             // toggle point
             Some(Input::Character(' ')) => {
                 grid_toggle(&mut matrix, cur_col as usize, cur_row as usize);
                 redraw_all!();
             },
+
+            // change rules
+            Some(Input::Character('-')) => {
+                live = (live-1).max(0);
+                redraw_all!();
+            },
+            Some(Input::Character('=')) => {
+                live = (live+1).min(9);
+                redraw_all!();
+            },
+            Some(Input::Character('[')) => {
+                birth = (birth-1).max(0);
+                redraw_all!();
+            },
+            Some(Input::Character(']')) => {
+                birth = (birth+1).min(9);
+                redraw_all!();
+            },
+
 
             // frame-advance
             Some(Input::Character('e')) =>  {
@@ -163,13 +181,27 @@ fn main() {
                 redraw_all!();
             }
 
+            // change framerate
+            Some(Input::Character(',')) => {
+                framerate = (framerate as i32-1).max(0) as usize;
+                redraw_all!();
+            }
+            Some(Input::Character('.')) => {
+                framerate = (framerate+1).min(framerates.len()-1);
+                redraw_all!();
+            }
+
             // play
             Some(Input::Character('f')) =>  {
                 pancurses::curs_set(0);
                 window.timeout(0);
+                let max_delay = ((1./framerates[framerate]) * 1000.) as i32;
                 while window.getch() != Some(Input::Character('f')){
+                    let now = std::time::Instant::now();
                     matrix = gol_step(&matrix, live, birth);
                     redraw_all!();
+                    // lotta casting, oof.
+                    window.timeout((max_delay as u128 - now.elapsed().as_millis()).max(0) as i32);
                 }
                 window.timeout(-1);
                 pancurses::curs_set(1);

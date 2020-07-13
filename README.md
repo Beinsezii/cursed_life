@@ -12,12 +12,15 @@ basically game of life in ncurses. doesn't use cutting-edge algorithms. more of 
  - xx    : clear
  - qq    : quit
 
-Game of Life rules. Values above 8 or below 1 don't make any sense, but right now there's no bounds checking so...
- - minus/equals '-='  : adjust 'lives' rule
- - brackets '[]'      : adjust 'birth' rule
+Game of Life rules.
+ - minus/equals '-=' : adjust 'lives' rule
+ - brackets '[]'     : adjust 'birth' rule
+
+System settings
+ - comma/period ',.' : adjust max framerate. more of a guideline, based on delays.
 
 ### Playing
-Just run the file, use space to manually add lifeforms, and press e or f to advance. Don't resize the window, that's not implemented yet. Also there's no framerate limiter on the playback, so if you have a small window/high clock speed it'll go fast.
+Just run the file, use space to manually add lifeforms, and press e or f to advance. Don't resize the window, that's not implemented yet.
 
 ### Building
 Uses `pancurses` crate which claims to be platform-agnostic. Can guarantee it works in Linux.
