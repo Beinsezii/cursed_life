@@ -119,9 +119,9 @@ fn main() {
     let mut birth: i32 = 3;
     let framerates = [0.5, 1., 2., 5., 10., 15., 20., 30., 45., 60., 90., 120., 999.];
     let mut framerate = 5;
-    let window = pancurses::initscr();
+    let mut window = pancurses::initscr();
     pancurses::noecho();
-    let (cols, rows) = window.get_max_yx();
+    let (mut cols, mut rows) = window.get_max_yx();
 
     let mut matrix = gen_grid(rows as usize, cols as usize - 1, None);
 
@@ -137,9 +137,6 @@ fn main() {
     loop {
         let (cur_row, cur_col) = window.get_cur_yx();
 
-        // TODO handle resize event. Already laid groundwork with gen_grid's ability to take
-        // another grid as an input param, it should just be -> resize win, get coords, update
-        // matrix.
         match window.getch() {
             // movement
             Some(Input::Character('w')) => {window.mv(cur_row-1, cur_col);},
@@ -173,7 +170,6 @@ fn main() {
                 birth = (birth+1).min(9);
                 redraw_all!();
             },
-
 
             // frame-advance
             Some(Input::Character('e')) =>  {
@@ -216,6 +212,20 @@ fn main() {
                     },
                     _ => (),
                 }
+            }
+
+            // TODO resize. Seems like it's missing a lot of resize fns in the docs.
+            Some(Input::KeyResize) => {
+                window.clear();
+                window.refresh();
+                // window.delwin();
+                pancurses::resize_term(0, 0);
+                window = pancurses::newwin(0, 0, 0, 0);
+
+                cols = window.get_max_y();
+                rows = window.get_max_x();
+                matrix = gen_grid(rows as usize, cols as usize - 1, Some(matrix));
+                redraw_all!();
             }
 
             // quit
