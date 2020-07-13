@@ -83,7 +83,7 @@ fn gol_step(grid: &Vec<Vec<bool>>, live: i32, birth: i32) -> Vec<Vec<bool>> {
             // actual GOL logic
             if neighbors == birth {
                 result[y as usize][x as usize] = true;
-            } else if neighbors == live {
+            } else if neighbors >= live && neighbors < birth {
                 result[y as usize][x as usize] = grid[y as usize][x as usize];
             };
 
