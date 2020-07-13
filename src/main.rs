@@ -196,8 +196,7 @@ fn main() {
                     let now = std::time::Instant::now();
                     matrix = gol_step(&matrix, live, birth);
                     redraw_all!();
-                    // lotta casting, oof.
-                    window.timeout((max_delay as u128 - now.elapsed().as_millis()).max(0) as i32);
+                    window.timeout((max_delay - now.elapsed().as_millis() as i32).max(0));
                 }
                 window.timeout(-1);
                 pancurses::curs_set(1);

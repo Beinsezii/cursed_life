@@ -1,4 +1,4 @@
-# cursed_life 0.10.0
+# cursed_life 0.10.1
 basically game of life in ncurses. doesn't use cutting-edge algorithms. more of a small Rust exercise than anything.
 
 <img width=720 src="./thick_screenshot.png" />
