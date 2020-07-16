@@ -87,7 +87,7 @@ fn gen_toolbar<I, F>(fg_char: char, bg_char: char, live: I, birth: I, framerate:
     I: std::fmt::Display,
     F: std::fmt::Display,
 {
-    format!("fg:'{}' bg:'{}' live:{} birth:{} FPS:{:.1}", fg_char, bg_char, live, birth, framerate)
+    format!("FG:'{}' BG:'{}' Live:{} Birth:{} FPS:{:.1}", fg_char, bg_char, live, birth, framerate)
 }
 
 
