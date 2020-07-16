@@ -94,11 +94,11 @@ fn gol_step(grid: &Vec<Vec<bool>>, live: i32, birth: i32) -> Vec<Vec<bool>> {
 
 
 // creates the string for the toolbar.
-fn gen_toolbar<I, F>(live: I, birth: I, framerate: F) -> String where
+fn gen_toolbar<I, F>(fg_char: char, bg_char: char, live: I, birth: I, framerate: F) -> String where
     I: std::fmt::Display,
     F: std::fmt::Display,
 {
-    format!("live:{}  birth:{}  max FPS:{:.1}", live, birth, framerate)
+    format!("fg:'{}' bg:'{}' live:{} birth:{} FPS:{:.1}", fg_char, bg_char, live, birth, framerate)
 }
 
 
@@ -112,9 +112,14 @@ fn redraw(window: &pancurses::Window, text: &str) {
 }
 
 
+fn valid_chars(c: char) -> bool{
+    c.is_alphanumeric() || c.is_whitespace() || c.is_ascii_punctuation()
+}
+
+
 fn main() {
-    let ch_t = 'O';
-    let ch_f = ' ';
+    let mut ch_t = 'O';
+    let mut ch_f = ' ';
     let mut live: i32 = 2;
     let mut birth: i32 = 3;
     let framerates = [0.5, 1., 2., 5., 10., 15., 20., 30., 45., 60., 90., 120., 999.];
@@ -127,7 +132,7 @@ fn main() {
 
     macro_rules! redraw_all {
         () => {
-            redraw(&window, &(grid_to_str(&matrix, ch_t, ch_f)+&gen_toolbar(live, birth, framerates[framerate])));
+            redraw(&window, &(grid_to_str(&matrix, ch_t, ch_f)+&gen_toolbar(ch_t, ch_f, live, birth, framerates[framerate])));
         }
     }
 
@@ -213,7 +218,29 @@ fn main() {
                 }
             }
 
+            // change chars
+            Some(Input::Character('c')) => {
+                window.mv(cols-1, 4);
+                match window.getch() {
+                    Some(Input::Character(c)) => {
+                        if valid_chars(c) && c != ch_f {ch_t = c;}
+                    }
+                    _ => ()
+                }
+                redraw_all!();
+                window.mv(cols-1, 11);
+                match window.getch() {
+                    Some(Input::Character(c)) => {
+                        if valid_chars(c) && c != ch_t {ch_f = c;}
+                    }
+                    _ => ()
+                }
+                window.mv(cur_row, cur_col);
+                redraw_all!();
+            }
+
             // TODO resize. Seems like it's missing a lot of resize fns in the docs.
+            // Blocking issue for 1.0
             Some(Input::KeyResize) => {
                 window.clear();
                 window.refresh();

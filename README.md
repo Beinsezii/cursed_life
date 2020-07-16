@@ -1,4 +1,4 @@
-# cursed_life 0.10.1
+# cursed_life 0.11.0
 basically game of life in ncurses. doesn't use cutting-edge algorithms. more of a small Rust exercise than anything.
 
 <img width=720 src="./thick_screenshot.png" />
@@ -18,6 +18,7 @@ Game of Life rules.
 
 System settings
  - comma/period ',.' : adjust max framerate. more of a guideline, based on delays.
+ - c                 : change dispaly characters.
 
 ### Playing
 Just run the file, use space to manually add lifeforms, and press e or f to advance. Don't resize the window; that's not implemented yet.
