@@ -21,7 +21,7 @@ System settings
  - c                 : change dispaly characters.
 
 ### Playing
-Just run the file, use space to manually add lifeforms, and press e or f to advance. Don't resize the window; that's not implemented yet.
+Just run the file in a terminal, use space to manually add lifeforms, and press e or f to advance. Don't resize the window; that's not implemented yet.
 
 ### Building
 Uses `pancurses` crate which claims to be platform-agnostic. Can guarantee it works in Linux.
