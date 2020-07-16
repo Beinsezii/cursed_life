@@ -1,6 +1,8 @@
 use pancurses::Input;
 
 
+//// Logic FNs ////
+
 // creates a new grid of x/y size optionally taking extra data from another grid
 fn gen_grid(x: usize, y: usize, grid: Option<Vec<Vec<bool>>>) ->  Vec<Vec<bool>> {
     match grid {
@@ -13,21 +15,6 @@ fn gen_grid(x: usize, y: usize, grid: Option<Vec<Vec<bool>>>) ->  Vec<Vec<bool>>
         }
         None => vec![vec![false; x]; y],
     }
-}
-
-
-// returns the grid as a long string. ncurses should wrap, so newlines aren't added
-fn grid_to_str(grid: &Vec<Vec<bool>>, char_true: char, char_false: char) -> String {
-    let mut result = String::new();
-    for row in grid{
-        for col in row {
-            match col {
-                true => result.push(char_true),
-                false => result.push(char_false),
-            }
-        }
-    }
-    result
 }
 
 
@@ -93,12 +80,29 @@ fn gol_step(grid: &Vec<Vec<bool>>, live: i32, birth: i32) -> Vec<Vec<bool>> {
 }
 
 
+//// UI FNs ////
+
 // creates the string for the toolbar.
 fn gen_toolbar<I, F>(fg_char: char, bg_char: char, live: I, birth: I, framerate: F) -> String where
     I: std::fmt::Display,
     F: std::fmt::Display,
 {
     format!("fg:'{}' bg:'{}' live:{} birth:{} FPS:{:.1}", fg_char, bg_char, live, birth, framerate)
+}
+
+
+// returns the grid as a long string. ncurses should wrap, so newlines aren't added
+fn grid_to_str(grid: &Vec<Vec<bool>>, char_true: char, char_false: char) -> String {
+    let mut result = String::new();
+    for row in grid{
+        for col in row {
+            match col {
+                true => result.push(char_true),
+                false => result.push(char_false),
+            }
+        }
+    }
+    result
 }
 
 
@@ -112,6 +116,7 @@ fn redraw(window: &pancurses::Window, text: &str) {
 }
 
 
+// returns true if char is an acceptable display character
 fn valid_chars(c: char) -> bool{
     c.is_alphanumeric() || c.is_whitespace() || c.is_ascii_punctuation()
 }
