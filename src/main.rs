@@ -122,6 +122,25 @@ fn valid_chars(c: char) -> bool{
 }
 
 
+const HELP_TEXT: &str =
+"Controls:
+wasd  : move
+space : toggle gridpoint
+e     : frame advance
+f     : playback
+xx    : clear
+qq    : quit
+h     : show/hide this help
+
+Game of Life rules:
+minus/equals '-=' : adjust 'lives' rule
+brackets '[]'     : adjust 'birth' rule
+
+System settings:
+comma/period ',.' : adjust max framerate
+c                 : change dispaly characters";
+
+
 fn main() {
     let mut ch_t = 'O';
     let mut ch_f = ' ';
@@ -141,8 +160,18 @@ fn main() {
         }
     }
 
+    macro_rules! show_help {
+        () => {
+            pancurses::curs_set(0);
+            redraw(&window, HELP_TEXT);
+            while window.getch() != Some(Input::Character('h')) {}
+            pancurses::curs_set(1);
+            redraw_all!();
+        }
+    }
+
     window.mv(cols/2, rows/2);
-    redraw_all!();
+    show_help!();
 
     loop {
         let (cur_row, cur_col) = window.get_cur_yx();
@@ -242,6 +271,11 @@ fn main() {
                 }
                 window.mv(cur_row, cur_col);
                 redraw_all!();
+            }
+
+            // show/hide help.
+            Some(Input::Character('h')) => {
+                show_help!();
             }
 
             // TODO resize. Seems like it's missing a lot of resize fns in the docs.
