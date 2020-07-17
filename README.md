@@ -2,7 +2,7 @@
 basically game of life in ncurses. doesn't use cutting-edge algorithms. more of a small Rust exercise than anything.
 
 <img width=720 src="./thick_screenshot.png" />
-<img src="./controls.png" />
+<img width=400 src="./controls.png" />
 
 ## Info
 ### Playing
