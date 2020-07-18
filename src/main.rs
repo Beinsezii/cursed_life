@@ -1,4 +1,5 @@
 use pancurses::Input;
+use rayon::prelude::*;
 
 
 //// Logic FNs ////
@@ -26,19 +27,15 @@ fn grid_toggle(grid: &mut Vec<Vec<bool>>, col: usize, row: usize) {
 
 // Returns a grid advanced one step in the GOL
 fn gol_step(grid: &Vec<Vec<bool>>, live: i32, birth: i32) -> Vec<Vec<bool>> {
-    // Blank grid to put results in. Avoids messing with the grid while in-use.
-    let mut result = gen_grid(grid[0].len(), grid.len(), None);
-
     // cast to i32's so subtractions don't panic.
     // Unfortunately means recasting as usize later. Doesn't matter since get() bounds checks,
     // and I strongly doubt someone has a screen size of a few billion tiles.
     let max_x = grid[0].len() as i32;
     let max_y = grid.len() as i32;
 
-    // this part should be thread-able but right now it runs fast enough without
-    // so that's for another time.
-    for x in 0..max_x {
-        for y in 0..max_y {
+    // returns a Vec<Vec<bool>>
+    (0..max_y).into_par_iter().map(|y| {
+        (0..max_x).into_par_iter().map(|x| {
             let mut neighbors = 0;
             // list of possible neighbors
             let coords = [
@@ -69,14 +66,12 @@ fn gol_step(grid: &Vec<Vec<bool>>, live: i32, birth: i32) -> Vec<Vec<bool>> {
 
             // actual GOL logic
             if neighbors == birth {
-                result[y as usize][x as usize] = true;
-            } else if neighbors >= live && neighbors < birth {
-                result[y as usize][x as usize] = grid[y as usize][x as usize];
-            };
-
-        } }
-
-    result
+                true
+            } else if neighbors >= live && neighbors < birth && grid[y as usize][x as usize] {
+                true
+            } else {false}
+        }).collect()
+    }).collect()
 }
 
 
