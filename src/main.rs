@@ -141,6 +141,9 @@ comma/period ',.' : adjust max framerate
 c                 : change dispaly characters";
 
 
+const LOG: bool = true;
+
+
 fn main() {
     let mut ch_t = 'O';
     let mut ch_f = ' ';
@@ -153,6 +156,9 @@ fn main() {
     let (mut cols, mut rows) = window.get_max_yx();
 
     let mut matrix = gen_grid(rows as usize, cols as usize - 1, None);
+
+    let mut draw_times = Vec::<u128>::new();
+    let mut step_times = Vec::<u128>::new();
 
     macro_rules! redraw_all {
         () => {
@@ -233,8 +239,17 @@ fn main() {
                 let max_delay = ((1./framerates[framerate]) * 1000.) as i32;
                 while window.getch() != Some(Input::Character('f')){
                     let now = std::time::Instant::now();
-                    matrix = gol_step(&matrix, live, birth);
-                    redraw_all!();
+                    if LOG {
+                        let step_timer = std::time::Instant::now();
+                        matrix = gol_step(&matrix, live, birth);
+                        step_times.push(step_timer.elapsed().as_micros());
+                        let draw_timer = std::time::Instant::now();
+                        redraw_all!();
+                        draw_times.push(draw_timer.elapsed().as_micros());
+                    } else {
+                        matrix = gol_step(&matrix, live, birth);
+                        redraw_all!();
+                    }
                     window.timeout((max_delay - now.elapsed().as_millis() as i32).max(0));
                 }
                 window.timeout(-1);
@@ -306,4 +321,9 @@ fn main() {
     }
 
     pancurses::endwin();
+    if LOG {
+        step_times.sort();
+        draw_times.sort();
+        println!("Step Median:\n{}\n\nDraw Median:\n{}", step_times[step_times.len()/2], draw_times[draw_times.len()/2]);
+    }
 }
