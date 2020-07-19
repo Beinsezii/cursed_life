@@ -136,10 +136,12 @@ comma/period ',.' : adjust max framerate
 c                 : change dispaly characters";
 
 
-const LOG: bool = true;
-
-
 fn main() {
+    let log: bool;
+    match std::env::args().find(|x| x == "-l") {
+        Some(_) => log = true,
+        None => log = false,
+    }
     let mut ch_t = 'O';
     let mut ch_f = ' ';
     let mut live: i32 = 2;
@@ -234,7 +236,7 @@ fn main() {
                 let max_delay = ((1./framerates[framerate]) * 1000.) as i32;
                 while window.getch() != Some(Input::Character('f')){
                     let now = std::time::Instant::now();
-                    if LOG {
+                    if log {
                         let step_timer = std::time::Instant::now();
                         matrix = gol_step(&matrix, live, birth);
                         step_times.push(step_timer.elapsed().as_micros());
@@ -316,7 +318,7 @@ fn main() {
     }
 
     pancurses::endwin();
-    if LOG {
+    if log {
         step_times.sort();
         draw_times.sort();
         println!("Step Median:\n{}\n\nDraw Median:\n{}", step_times[step_times.len()/2], draw_times[draw_times.len()/2]);
