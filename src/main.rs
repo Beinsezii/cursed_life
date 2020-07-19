@@ -156,6 +156,12 @@ fn main() {
     let mut draw_times = Vec::<u128>::new();
     let mut step_times = Vec::<u128>::new();
 
+    macro_rules! step {
+        () => {
+            matrix = gol_step(&matrix, live, birth);
+        }
+    }
+
     macro_rules! redraw_all {
         () => {
             redraw(&window, &(grid_to_str(&matrix, ch_t, ch_f)+&gen_toolbar(ch_t, ch_f, live, birth, framerates[framerate])));
@@ -214,7 +220,7 @@ fn main() {
 
             // frame-advance
             Some(Input::Character('e')) =>  {
-                matrix = gol_step(&matrix, live, birth);
+                step!();
                 redraw_all!();
             }
 
@@ -237,13 +243,13 @@ fn main() {
                     let now = std::time::Instant::now();
                     if log {
                         let step_timer = std::time::Instant::now();
-                        matrix = gol_step(&matrix, live, birth);
+                        step!();
                         step_times.push(step_timer.elapsed().as_micros());
                         let draw_timer = std::time::Instant::now();
                         redraw_all!();
                         draw_times.push(draw_timer.elapsed().as_micros());
                     } else {
-                        matrix = gol_step(&matrix, live, birth);
+                        step!();
                         redraw_all!();
                     }
                     window.timeout((max_delay - now.elapsed().as_millis() as i32).max(0));
