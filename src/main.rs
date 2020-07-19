@@ -238,7 +238,7 @@ fn main() {
             Some(Input::Character('f')) =>  {
                 pancurses::curs_set(0);
                 window.timeout(0);
-                let max_delay = ((1./framerates[framerate]) * 1000.) as i32;
+                let max_delay = ((1./framerates[framerate]) * 1000000.) as i32;
                 while window.getch() != Some(Input::Character('f')){
                     let now = std::time::Instant::now();
                     if log {
@@ -252,7 +252,7 @@ fn main() {
                         step!();
                         redraw_all!();
                     }
-                    window.timeout((max_delay - now.elapsed().as_millis() as i32).max(0));
+                    window.timeout(((max_delay - now.elapsed().as_micros() as i32) / 1000).max(0));
                 }
                 window.timeout(-1);
                 pancurses::curs_set(1);
