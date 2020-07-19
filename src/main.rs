@@ -107,7 +107,6 @@ fn redraw(window: &pancurses::Window, text: &str) {
     window.erase();
     window.addstr(text);
     window.mv(cy, cx);
-    window.refresh();
 }
 
 
