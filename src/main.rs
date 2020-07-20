@@ -161,7 +161,11 @@ brackets '[]'     : adjust 'birth' rule
 
 System settings:
 comma/period ',.' : adjust max framerate
-c                 : change dispaly characters";
+c                 : change characters
+
+Command flags:
+-l : log performance stats
+-h : print this help and exit";
 
 
 // key event shorthand. Can match get_event to KE!(char)
@@ -176,6 +180,14 @@ macro_rules! KE {
 
 
 fn main() {
+    match std::env::args().find(|x| x == "-h") {
+        Some(_) => {
+            println!("{}", HELP_TEXT);
+            return
+        },
+        None => (),
+    }
+
     terminal::enable_raw_mode().unwrap();
     let (mut cols, mut rows) = terminal::size().unwrap();
     let mut stdo = stdout();
