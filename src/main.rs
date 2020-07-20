@@ -184,6 +184,7 @@ fn main() {
         stdo,
         terminal::EnterAlternateScreen,
         cursor::MoveTo(cols/2, rows/2),
+        cursor::DisableBlinking,
         ).unwrap();
 
     let log: bool;
@@ -254,13 +255,13 @@ fn main() {
 
         match get_event(None) {
             // movement
-            Some(KE!('w')) => {stdo.queue(cursor::MoveUp(1)).unwrap();},
-            Some(KE!('a')) => {stdo.queue(cursor::MoveLeft(1)).unwrap();},
+            Some(KE!('w')) => {stdo.execute(cursor::MoveUp(1)).unwrap();},
+            Some(KE!('a')) => {stdo.execute(cursor::MoveLeft(1)).unwrap();},
             Some(KE!('s')) => {
                 // prevent selecting the toolbar which is invalid matrix bounds
-                if cur_row < rows - 2 {stdo.queue(cursor::MoveDown(1)).unwrap();}
+                if cur_row < rows - 2 {stdo.execute(cursor::MoveDown(1)).unwrap();}
             },
-            Some(KE!('d')) => {stdo.queue(cursor::MoveRight(1)).unwrap();},
+            Some(KE!('d')) => {stdo.execute(cursor::MoveRight(1)).unwrap();},
 
             // toggle point
             Some(KE!(' ')) => {
@@ -331,7 +332,7 @@ fn main() {
                     poll_time = if max_delay > delta {max_delay - delta}
                                 else {min_delay}
                 }
-                stdo.queue(cursor::Show).unwrap();
+                stdo.execute(cursor::Show).unwrap();
             }
 
             // clear
