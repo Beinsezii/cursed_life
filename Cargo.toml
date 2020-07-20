@@ -1,6 +1,6 @@
 [package]
 name = "cursed_life"
-version = "0.13.2"
+version = "0.14.0"
 authors = ["Beinsezii <beinsezii@gmail.com>"]
 edition = "2018"
 
@@ -8,11 +8,7 @@ edition = "2018"
 
 [dependencies]
 rayon = "1.1"
-
-
-[dependencies.pancurses]
-version = "0.16"
-features = ["win32"]
+crossterm = "0.17"
 
 
 [profile.release]
