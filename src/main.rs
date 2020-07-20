@@ -180,6 +180,7 @@ macro_rules! KE {
 
 
 fn main() {
+    // -h flag
     match std::env::args().find(|x| x == "-h") {
         Some(_) => {
             println!("{}", HELP_TEXT);
@@ -188,6 +189,14 @@ fn main() {
         None => (),
     }
 
+    // -l flag
+    let log: bool;
+    match std::env::args().find(|x| x == "-l") {
+        Some(_) => log = true,
+        None => log = false,
+    }
+
+    // initializations
     terminal::enable_raw_mode().unwrap();
     let (mut cols, mut rows) = terminal::size().unwrap();
     let mut stdo = stdout();
@@ -199,12 +208,7 @@ fn main() {
         cursor::DisableBlinking,
         ).unwrap();
 
-    let log: bool;
-    match std::env::args().find(|x| x == "-l") {
-        Some(_) => log = true,
-        None => log = false,
-    }
-
+    // settings
     let mut ch_t = 'O';
     let mut ch_f = ' ';
     let mut live: i32 = 2;
