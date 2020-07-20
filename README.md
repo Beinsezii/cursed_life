@@ -1,15 +1,21 @@
-# cursed_life 0.14.1
-basically game of life in tui. doesn't use cutting-edge algorithms. more of a small Rust exercise than anything.
+# cursed_life 1.0.0
+Basically game of life in tui. Pretty basic, more of a small Rust exercise than anything.
 
-first version was based in ncurses, hence the name.
+First version was based in ncurses, hence the name. Now uses Crossterm.
 
-<img width=720 src="./thick_screenshot.png" />
-<img width=400 src="./controls.png" />
+<img width=720 src="./screenshots/thick_screenshot.png" />
+<img width=400 src="./screenshots/controls.png" />
 
 ## Playing
 Just run the file in a terminal, use 'h' to show/hide controls.
 
-Don't resize the window; that's not implemented yet.
-
 ## Building
-Uses `crossterm` crate which claims to be platform-agnostic. Can guarantee it works in Linux and Windows.
+Uses `crossterm` crate which claims to be platform-agnostic. Tested in...
+
+ - Linux:
+ - - Alacritty
+ - - XTerm
+ - - TTY
+ - Windows:
+ - - Powershell
+ - - CMD

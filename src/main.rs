@@ -4,10 +4,10 @@ use std::time::{Duration, Instant};
 use crossterm::{
     ExecutableCommand, QueueableCommand,
     queue,
-    terminal,
-    event::{Event, KeyEvent, KeyCode, KeyModifiers, read, poll},
     cursor,
-    style::Print
+    event::{Event, KeyEvent, KeyCode, read, poll},
+    style::Print,
+    terminal,
 };
 
 
@@ -145,6 +145,19 @@ fn get_event(duration: Option<Duration>) -> Option<Event>{
 }
 
 
+//// Standalone macros ////
+
+// key event shorthand. Can match get_event to KE!(char)
+macro_rules! KE {
+    ($ch:expr) => {
+        Event::Key(KeyEvent{code: KeyCode::Char($ch), modifiers: _})
+    };
+    ($ch:expr, $mod:expr) => {
+        Event::Key(KeyEvent{code: KeyCode::Char($ch), modifiers: $mod})
+    };
+}
+
+
 const HELP_TEXT: &str =
 "Controls:
 wasd  : move
@@ -166,17 +179,6 @@ c                 : change characters
 Command flags:
 -l : log performance stats
 -h : print this help and exit";
-
-
-// key event shorthand. Can match get_event to KE!(char)
-macro_rules! KE {
-    ($ch:expr) => {
-        Event::Key(KeyEvent{code: KeyCode::Char($ch), modifiers: _})
-    };
-    ($ch:expr, $mod:expr) => {
-        Event::Key(KeyEvent{code: KeyCode::Char($ch), modifiers: $mod})
-    }
-}
 
 
 fn main() {
@@ -208,19 +210,21 @@ fn main() {
         cursor::DisableBlinking,
         ).unwrap();
 
-    // settings
+    // game data
     let mut ch_t = 'O';
     let mut ch_f = ' ';
     let mut live: i32 = 2;
     let mut birth: i32 = 3;
     let framerates = [0.5, 1., 2., 5., 10., 15., 20., 30., 45., 60., 90., 120., 999.];
-    let mut framerate = 5;
+    let mut framerate = 5; // 15.
 
     let mut matrix = gen_grid(cols as usize, rows as usize - 1, None);
 
     let mut draw_times = Vec::<u128>::new();
     let mut step_times = Vec::<u128>::new();
     let mut framerate_averages = Vec::<f64>::new();
+
+    //// Macros that use game data ////
 
     // advance the game one iter
     macro_rules! step {
@@ -246,6 +250,22 @@ fn main() {
         }
     }
 
+    // update cols rows, resize grid, erase!() and redraw_all!().
+    macro_rules! resize {
+        () => {
+            let (new_cols, new_rows) = terminal::size().unwrap();
+            resize!(new_cols, new_rows);
+            };
+        ($new_cols: expr, $new_rows: expr) => {
+            cols = $new_cols;
+            rows = $new_rows;
+            matrix = gen_grid(cols as usize, rows as usize - 1, Some(matrix));
+            // if you  don't erase chars can get left over in lower-right corner.
+            erase!();
+            redraw_all!();
+            }
+    }
+
     // erase!(), write HELP_TEXT, wait for keycode 'h', redraw_all!()
     macro_rules! show_help {
         () => {
@@ -255,29 +275,40 @@ fn main() {
             loop {
                 match get_event(None) {
                     Some(KE!('h')) => break,
+                    Some(Event::Resize(_, _)) => {
+                        erase!();
+                        redraw(&mut stdo, HELP_TEXT);
+                    },
                     _ => (),
                 }
             }
             stdo.queue(cursor::Show).unwrap();
-            redraw_all!();
+            // in case the window resized.
+            resize!();
         }
     }
 
-    // start off with control screen since there's no cmd args besides -l
+    // start off with control screen. First impressions are important.
     show_help!();
 
     // main loop
     loop {
-        let (cur_col, cur_row) = cursor::position().unwrap();
+        let (mut cur_col, mut cur_row) = cursor::position().unwrap();
+
+        // don't let cursor into toolbar
+        if cur_row > rows - 2 {
+            stdo.execute(cursor::MoveUp(1)).unwrap();
+            // no way to update mutables from tuple?
+            let (ncur_col, ncur_row) = cursor::position().unwrap();
+            cur_col = ncur_col;
+            cur_row = ncur_row;
+        }
 
         match get_event(None) {
             // movement
             Some(KE!('w')) => {stdo.execute(cursor::MoveUp(1)).unwrap();},
             Some(KE!('a')) => {stdo.execute(cursor::MoveLeft(1)).unwrap();},
-            Some(KE!('s')) => {
-                // prevent selecting the toolbar which is invalid matrix bounds
-                if cur_row < rows - 2 {stdo.execute(cursor::MoveDown(1)).unwrap();}
-            },
+            Some(KE!('s')) => {stdo.execute(cursor::MoveDown(1)).unwrap();},
             Some(KE!('d')) => {stdo.execute(cursor::MoveRight(1)).unwrap();},
 
             // toggle point
@@ -327,31 +358,47 @@ fn main() {
                 let max_delay = Duration::from_secs_f64(1./framerates[framerate]);
                 let mut poll_time = min_delay;
                 let mut delta: Duration;
+                // for framerate average. only used if log
                 let mut frames = 0.;
                 let total_timer = Instant::now();
-                while get_event(Some(poll_time)) != Some(Event::Key(
-                    KeyEvent{
-                        code: KeyCode::Char('f'),
-                        modifiers: KeyModifiers::empty()
-                    }))
-                {
-                    let iter_timer = Instant::now();
-                    if log {
-                        let step_timer = Instant::now();
-                        step!();
-                        step_times.push(step_timer.elapsed().as_micros());
-                        let draw_timer = Instant::now();
-                        redraw_all!();
-                        draw_times.push(draw_timer.elapsed().as_micros());
-                        frames += 1.;
-                    } else {
-                        step!();
-                        redraw_all!();
-                    }
-                    delta = iter_timer.elapsed();
-                    poll_time = if max_delay > delta {max_delay - delta}
-                                else {min_delay}
-                }
+
+                loop {
+                    let delta_timer = Instant::now();
+                    match get_event(Some(poll_time)) {
+
+                        // if 'f', break
+                        Some(Event::Key(
+                        KeyEvent{
+                            code: KeyCode::Char('f'),
+                            modifiers: _
+                        })) => break,
+
+                        // if resize, resize!
+                        Some(Event::Resize(c, r)) => {resize!(c, r);},
+
+                        // else, iter.
+                        _ => {
+                            // if statement cause log is messy. don't want perpetually growing
+                            // vectors in normal play. also theoretically boost performance by not
+                            // making so many new timers every frame
+                            if log {
+                                let step_timer = Instant::now();
+                                step!();
+                                step_times.push(step_timer.elapsed().as_micros());
+                                let draw_timer = Instant::now();
+                                redraw_all!();
+                                draw_times.push(draw_timer.elapsed().as_micros());
+                                frames += 1.;
+                            } else {
+                                step!();
+                                redraw_all!();
+                            }
+                            delta = delta_timer.elapsed();
+                            poll_time = if max_delay > delta {max_delay - delta}
+                                        else {min_delay}
+                        },
+                    } // match end
+                } // loop end
                 stdo.execute(cursor::Show).unwrap();
                 if log {framerate_averages.push(frames/total_timer.elapsed().as_secs() as f64)}
             }
@@ -395,40 +442,32 @@ fn main() {
                 show_help!();
             }
 
-            // TODO resize. Seems like it's missing a lot of resize fns in the docs.
-            // Blocking issue for 1.0
-            // Some(Input::KeyResize) => {
-            //     window.clear();
-            //     window.refresh();
-            //     // window.delwin();
-            //     pancurses::resize_term(0, 0);
-            //     window = pancurses::newwin(0, 0, 0, 0);
-
-            //     cols = window.get_max_y();
-            //     rows = window.get_max_x();
-            //     matrix = gen_grid(rows as usize, cols as usize - 1, Some(matrix));
-            //     redraw_all!();
-            // }
+            Some(Event::Resize(c, r)) => {resize!(c, r);},
 
             // quit
+            // TODO ctrl-c support. use ctrl-c in play and help loops, too.
             Some(KE!('q')) => match get_event(None) {
                 Some(KE!('q')) => break,
                 _ => (),
             },
 
             _ => (),
-        }
-    }
+        } // match end
+    } // loop end
 
     // cleanup
-    stdo.queue(terminal::LeaveAlternateScreen).unwrap();
+    stdo.execute(terminal::LeaveAlternateScreen).unwrap();
     terminal::disable_raw_mode().unwrap();
 
     if log {
-        step_times.sort();
-        draw_times.sort();
-        println!("Step time median:\n{} microseconds\n", step_times[step_times.len()/2]);
-        println!("Draw time median:\n{} microseconds\n", draw_times[draw_times.len()/2]);
+        if step_times.len() > 1 {
+            step_times.sort();
+            println!("Step time median:\n{} microseconds\n", step_times[step_times.len()/2]);
+        }
+        if draw_times.len() > 1 {
+            draw_times.sort();
+            println!("Draw time median:\n{} microseconds\n", draw_times[draw_times.len()/2]);
+        }
         println!("Playback average framerates:\n{:?}", framerate_averages);
     }
 }
