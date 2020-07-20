@@ -220,6 +220,7 @@ fn main() {
 
     let mut draw_times = Vec::<u128>::new();
     let mut step_times = Vec::<u128>::new();
+    let mut framerate_averages = Vec::<f64>::new();
 
     // advance the game one iter
     macro_rules! step {
@@ -322,17 +323,19 @@ fn main() {
             // play. also logs performance if -l passed.
             Some(KE!('f')) =>  {
                 stdo.queue(cursor::Hide).unwrap();
-                let min_delay = Duration::from_micros(1);
+                let min_delay = Duration::from_micros(0);
                 let max_delay = Duration::from_secs_f64(1./framerates[framerate]);
                 let mut poll_time = min_delay;
                 let mut delta: Duration;
+                let mut frames = 0.;
+                let total_timer = Instant::now();
                 while get_event(Some(poll_time)) != Some(Event::Key(
                     KeyEvent{
                         code: KeyCode::Char('f'),
                         modifiers: KeyModifiers::empty()
                     }))
                 {
-                    let total_timer = Instant::now();
+                    let iter_timer = Instant::now();
                     if log {
                         let step_timer = Instant::now();
                         step!();
@@ -340,15 +343,17 @@ fn main() {
                         let draw_timer = Instant::now();
                         redraw_all!();
                         draw_times.push(draw_timer.elapsed().as_micros());
+                        frames += 1.;
                     } else {
                         step!();
                         redraw_all!();
                     }
-                    delta = total_timer.elapsed();
+                    delta = iter_timer.elapsed();
                     poll_time = if max_delay > delta {max_delay - delta}
                                 else {min_delay}
                 }
                 stdo.execute(cursor::Show).unwrap();
+                if log {framerate_averages.push(frames/total_timer.elapsed().as_secs() as f64)}
             }
 
             // clear
@@ -422,6 +427,8 @@ fn main() {
     if log {
         step_times.sort();
         draw_times.sort();
-        println!("Step Median:\n{}\n\nDraw Median:\n{}", step_times[step_times.len()/2], draw_times[draw_times.len()/2]);
+        println!("Step time median:\n{} microseconds\n", step_times[step_times.len()/2]);
+        println!("Draw time median:\n{} microseconds\n", draw_times[draw_times.len()/2]);
+        println!("Playback average framerates:\n{:?}", framerate_averages);
     }
 }
