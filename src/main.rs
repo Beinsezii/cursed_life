@@ -111,9 +111,18 @@ fn grid_to_str(grid: &Vec<Vec<bool>>, char_true: char, char_false: char) -> Stri
 
 
 // clears terminal and redraws text.
-fn redraw<T: Write>(buff: &mut T, text: &str) {
+fn redraw<T: Write>(buff: &mut T, mut text: String, bounds: Option<[u16;2]>) {
     buff.queue(cursor::SavePosition).unwrap();
     let mut i = 0;
+    match bounds {
+        Some(cols_rows) => {
+            let max = (cols_rows[0] * cols_rows[1]) as usize;
+            if text.len() > max {
+                text.truncate(max);
+            }
+        },
+        None => (),
+    };
     for slice in text.split('\n') {
         buff.queue(cursor::MoveTo(0, i)).unwrap()
             .queue(Print(slice)).unwrap();
@@ -237,8 +246,9 @@ fn main() {
     macro_rules! redraw_all {
         () => {
             redraw(&mut stdo,
-                   &(grid_to_str(&matrix, ch_t, ch_f) +
-                   &gen_toolbar(ch_t, ch_f, live, birth, framerates[framerate])));
+                grid_to_str(&matrix, ch_t, ch_f) +
+                &gen_toolbar(ch_t, ch_f, live, birth, framerates[framerate]),
+                Some([cols, rows]));
         }
     }
 
@@ -246,7 +256,7 @@ fn main() {
     macro_rules! erase {
         () => {
             let blank = String::from(" ").repeat((cols*rows).into());
-            redraw(&mut stdo, &blank);
+            redraw(&mut stdo, blank, None);
         }
     }
 
@@ -271,13 +281,13 @@ fn main() {
         () => {
             stdo.queue(cursor::Hide).unwrap();
             erase!();
-            redraw(&mut stdo, HELP_TEXT);
+            redraw(&mut stdo, String::from(HELP_TEXT), None);
             loop {
                 match get_event(None) {
                     Some(KE!('h')) => break,
                     Some(Event::Resize(_, _)) => {
                         erase!();
-                        redraw(&mut stdo, HELP_TEXT);
+                        redraw(&mut stdo, String::from(HELP_TEXT), None);
                     },
                     _ => (),
                 }
