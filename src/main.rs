@@ -1,4 +1,4 @@
-use rayon::prelude::*;
+use std::convert::Into;
 use std::io::{Write, stdout};
 use std::time::{Duration, Instant};
 use crossterm::{
@@ -9,6 +9,7 @@ use crossterm::{
     style::Print,
     terminal,
 };
+use rayon::prelude::*;
 
 
 //// Logic FNs ////
@@ -112,21 +113,28 @@ fn grid_to_str(grid: &Vec<Vec<bool>>, char_true: char, char_false: char) -> Stri
 
 
 // clears terminal and redraws text.
-fn redraw<T: Write, U: std::convert::Into<usize>>(buff: &mut T, text: &str, col_max: U, _row_max: U) {
+fn redraw<T: Write, U: Into<usize>,>(buff: &mut T, text: &str, col_max: U, row_max: U) {
     let col_max: usize = col_max.into();
-    buff.queue(cursor::SavePosition).unwrap();
+    let row_max: usize = row_max.into();
     let mut i = 0;
+    buff.queue(cursor::SavePosition).unwrap();
+
     for slice in text.split('\n') {
+        if i > row_max - 1 {break};
+
         let mut slice = String::from(slice);
         if slice.len() > col_max {
             slice.truncate(col_max);
         }
-        buff.queue(cursor::MoveTo(0, i))
+
+        buff.queue(cursor::MoveTo(0, i as u16))
             .unwrap()
             .queue(Print(slice))
             .unwrap();
+
         i += 1;
     }
+
     buff.queue(cursor::RestorePosition)
         .unwrap()
         .flush()
@@ -284,7 +292,9 @@ fn main() {
             loop {
                 match get_event(None) {
                     Some(KE!('h')) => break,
-                    Some(Event::Resize(_, _)) => {
+                    Some(Event::Resize(ncols, nrows)) => {
+                        cols = ncols;
+                        rows = nrows;
                         erase!();
                         redraw(&mut stdo, HELP_TEXT, cols, rows);
                     },
