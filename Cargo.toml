@@ -1,6 +1,6 @@
 [package]
 name = "cursed_life"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Beinsezii <beinsezii@gmail.com>"]
 edition = "2018"
 
