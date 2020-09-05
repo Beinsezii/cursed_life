@@ -5,7 +5,8 @@ use crossterm::{
     ExecutableCommand, QueueableCommand,
     queue,
     cursor,
-    event::{Event, KeyEvent, KeyCode, read, poll},
+    event,
+    event::{Event, KeyEvent, KeyCode, MouseEvent, MouseButton, read, poll},
     style::Print,
     terminal,
 };
@@ -183,6 +184,8 @@ f     : playback
 xx    : clear
 qq    : quit
 h     : show/hide this help
+lmb   : draw
+rmb   : erase
 
 Game of Life rules:
 minus/equals '-=' : adjust 'lives' rule
@@ -224,6 +227,7 @@ fn main() {
         terminal::EnterAlternateScreen,
         cursor::MoveTo(cols/2, rows/2),
         cursor::DisableBlinking,
+        event::EnableMouseCapture,
         ).unwrap();
 
     // game data
@@ -456,6 +460,40 @@ fn main() {
                 redraw_all!();
             }
 
+            // mouse click/drag
+            Some(Event::Mouse(MouseEvent::Down(button, col, row, _))) => {
+                if row >= rows-1 {continue}
+                let col = col as usize;
+                let row = row as usize;
+                match button {
+                    MouseButton::Middle => (),
+                    _ => {
+                        // click
+                        if (!matrix[row][col] && button == MouseButton::Left) ||
+                           (matrix[row][col] && button == MouseButton::Right) {
+                                grid_toggle(&mut matrix, col, row);
+                                redraw_all!();
+                        }
+                        // drag
+                        loop {
+                            match get_event(None) {
+                                Some(Event::Mouse(MouseEvent::Drag(button, col, row, _))) => {
+                                    if row >= rows-1 {break}
+                                    let col = col as usize;
+                                    let row = row as usize;
+                                    if (!matrix[row][col] && button == MouseButton::Left) ||
+                                       (matrix[row][col] && button == MouseButton::Right) {
+                                            grid_toggle(&mut matrix, col, row);
+                                            redraw_all!();
+                                    }
+                                }
+                                _ => break,
+                            }
+                        }
+                    }
+                }
+            }
+
             // show/hide help.
             Some(KE!('h')) => {
                 show_help!();
@@ -475,7 +513,12 @@ fn main() {
     } // loop end
 
     // cleanup
-    stdo.execute(terminal::LeaveAlternateScreen).unwrap();
+    queue!(
+        stdo,
+        terminal::LeaveAlternateScreen,
+        event::DisableMouseCapture,
+        ).unwrap();
+    stdo.flush().unwrap();
     terminal::disable_raw_mode().unwrap();
 
     if log {

@@ -1,4 +1,4 @@
-# cursed_life 1.0.1
+# cursed_life 1.1.0
 Basically game of life in tui. Pretty basic, more of a small Rust exercise than anything.
 
 First version was based in ncurses, hence the name. Now uses Crossterm.
