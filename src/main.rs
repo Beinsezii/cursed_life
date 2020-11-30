@@ -378,7 +378,6 @@ fn main() {
                 stdo.queue(cursor::Hide).unwrap();
                 let min_delay = Duration::from_micros(0);
                 let max_delay = Duration::from_secs_f64(1./framerates[framerate]);
-                let mut poll_time = min_delay;
                 let mut delta: Duration;
                 // for framerate average. only used if log
                 let mut frames = 0.;
@@ -386,7 +385,7 @@ fn main() {
 
                 loop {
                     let delta_timer = Instant::now();
-                    match get_event(Some(poll_time)) {
+                    match get_event(Some(min_delay)) {
 
                         // if 'f', break
                         Some(Event::Key(
@@ -416,8 +415,8 @@ fn main() {
                                 redraw_all!();
                             }
                             delta = delta_timer.elapsed();
-                            poll_time = if max_delay > delta {max_delay - delta}
-                                        else {min_delay}
+                            std::thread::sleep(if max_delay > delta {max_delay - delta}
+                                               else {min_delay})
                         },
                     } // match end
                 } // loop end

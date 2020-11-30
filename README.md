@@ -19,3 +19,5 @@ Uses `crossterm` crate which claims to be platform-agnostic. Tested in...
  - Windows:
  - - Powershell
  - - CMD
+ - Android:
+ - - Termux
