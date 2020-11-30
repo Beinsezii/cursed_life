@@ -10,7 +10,6 @@ use crossterm::{
     style::Print,
     terminal,
 };
-use rayon::prelude::*;
 
 
 //// Logic FNs ////
@@ -45,8 +44,8 @@ fn gol_step(grid: &Vec<Vec<bool>>, live: i32, birth: i32) -> Vec<Vec<bool>> {
     let max_y = grid.len() as i32;
 
     // returns a Vec<Vec<bool>>
-    (0..max_y).into_par_iter().map(|y| {
-        (0..max_x).into_par_iter().map(|x| {
+    (0..max_y).into_iter().map(|y| {
+        (0..max_x).into_iter().map(|x| {
             let mut neighbors = 0;
             // list of possible neighbors
             let coords = [
